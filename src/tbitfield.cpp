@@ -13,36 +13,37 @@ static TBitField FAKE_BITFIELD(1);
 
 TBitField::TBitField(int len) : BitLen(len)
 {
-    MemLen = (len + 15) >> 4; 
+    MemLen = (len + 31) >> 5; 
 
     pMem = new TELEM[MemLen];
 
 }
 
-TBitField::TBitField(const TBitField& bf) : BitLen(bf.BitLen) // конструктор копирования
+TBitField::TBitField(const TBitField& bf) : BitLen(bf.BitLen), MemLen(bf.MemLen), pMem(bf.pMem) // конструктор копирования
 {
-
 }
 
 TBitField::~TBitField()
 {
+    delete[]  pMem;
 }
 
 int TBitField::GetMemIndex(const int n) const // индекс Мем для бита n
 {
-    return n>>4;
+    int size = sizeof(TELEM) * 8;
+    return 1/size;
 }
 
 TELEM TBitField::GetMemMask(const int n) const // битовая маска для бита n
 {
-    return 1 << (n & 15);
+    return ;
 }
 
 // доступ к битам битового поля
 
 int TBitField::GetLength(void) const // получить длину (к-во битов)
 {
-  return BitLen;
+  return this->BitLen;
 }
 
 void TBitField::SetBit(const int n) // установить бит
@@ -64,12 +65,20 @@ int TBitField::GetBit(const int n) const // получить значение б
 
 TBitField& TBitField::operator=(const TBitField &bf) // присваивание
 {
-    return FAKE_BITFIELD;
+    BitLen = bf.BitLen;
+    pMem = bf.pMem;
+    return *this;
 }
 
 int TBitField::operator==(const TBitField &bf) const // сравнение
 {
-  return FAKE_INT;
+    int res = 1;
+    if (BitLen != bf.BitLen) res = 0;
+    else
+        for (int i = 0; i < MemLen; i++)
+            if (pMem[i] != bf.pMem[i]) { res = 0; break; }
+    return res;
+  
 }
 
 int TBitField::operator!=(const TBitField &bf) const // сравнение
@@ -79,7 +88,12 @@ int TBitField::operator!=(const TBitField &bf) const // сравнение
 
 TBitField TBitField::operator|(const TBitField &bf) // операция "или"
 {
-    return FAKE_BITFIELD;
+    int i, len = BitLen;
+    if (bf.BitLen > len) len = bf.BitLen;
+    TBitField temp(len);
+    for (i = 0; i < MemLen; i++) temp.pMem[i] = pMem[i];
+    for (i = 0; i < bf.MemLen; i++) temp.pMem[i] |= bf.pMem[i];
+    return temp;
 }
 
 TBitField TBitField::operator&(const TBitField &bf) // операция "и"
